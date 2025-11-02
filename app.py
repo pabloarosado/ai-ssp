@@ -58,7 +58,7 @@ RISK_DATA = {
     'SSP2': [15, 5, 3, 5, 3],
     'SSP3': [15, 10, 7, 10, 10],
     'SSP4': [20, 10, 7, 5, 5],
-    'SSP5': [50, 20, 5, 20, 20]
+    'SSP5': [30, 20, 5, 20, 20]
 }
 
 
@@ -338,12 +338,49 @@ def create_radar_chart(ssp):
     ))
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 50], tickfont=dict(size=10)),
+            radialaxis=dict(visible=True, range=[0, 30], tickfont=dict(size=10)),
             angularaxis=dict(tickfont=dict(size=11))
         ),
         showlegend=False,
         height=450,
         title=f"{SCENARIOS[ssp]['name']}"
+    )
+    return fig
+
+def create_combined_radar_chart():
+    """Create radar chart comparing all SSPs together."""
+    fig = go.Figure()
+    
+    categories = RISK_DATA['risks']
+    
+    for ssp in ['SSP5', 'SSP4', 'SSP3', 'SSP2', 'SSP1']:
+        values = RISK_DATA[ssp]
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=categories,
+            fill='toself',
+            fillcolor=SCENARIOS[ssp]['color'],
+            opacity=0.8,
+            line=dict(color=SCENARIOS[ssp]['color'], width=2),
+            name=SCENARIOS[ssp]['name']
+        ))
+    
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 30], tickfont=dict(size=10)),
+            angularaxis=dict(tickfont=dict(size=11))
+        ),
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.02
+        ),
+        height=500,
+        title="All Scenarios Compared",
+        margin=dict(r=250)  # Add right margin to prevent legend cutoff
     )
     return fig
 
@@ -424,13 +461,14 @@ st.markdown("---")
 # Section 3: Risk Assessment
 st.subheader("Risk profiles by 2040")
 
-# Risk radar charts - tabs for each SSP
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+# Risk radar charts - tabs for each SSP plus comparison
+tab1, tab2, tab3, tab4, tab5, tab_compare = st.tabs([
     f"{SCENARIOS['SSP1']['name'].split(':')[0]}",
     f"{SCENARIOS['SSP2']['name'].split(':')[0]}",
     f"{SCENARIOS['SSP3']['name'].split(':')[0]}",
     f"{SCENARIOS['SSP4']['name'].split(':')[0]}",
-    f"{SCENARIOS['SSP5']['name'].split(':')[0]}"
+    f"{SCENARIOS['SSP5']['name'].split(':')[0]}",
+    "Compared"
 ])
 
 for tab, ssp in zip([tab1, tab2, tab3, tab4, tab5], ['SSP1', 'SSP2', 'SSP3', 'SSP4', 'SSP5']):
@@ -438,6 +476,10 @@ for tab, ssp in zip([tab1, tab2, tab3, tab4, tab5], ['SSP1', 'SSP2', 'SSP3', 'SS
         fig_radar = create_radar_chart(ssp)
         fig_radar.update_layout(height=500)
         st.plotly_chart(fig_radar, use_container_width=True)
+
+with tab_compare:
+    fig_combined = create_combined_radar_chart()
+    st.plotly_chart(fig_combined, use_container_width=True)
 
 st.markdown("---")
 
