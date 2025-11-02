@@ -19,48 +19,46 @@ st.set_page_config(
 # Scale: 1 (lowest/worst) to 5 (highest/best)
 AI_METRICS = {
     'SSP1': {
-        'Capability': 4,    # Strong capability through cooperation
-        'Safety': 5,        # Highest safety prioritization
-        'Cooperation': 5    # Maximum international cooperation
+        'Safety': 4,
+        'Cooperation': 4,
+        'Capability': 3,
     },
     'SSP2': {
-        'Capability': 3,    # Moderate, uneven progress
-        'Safety': 3,        # Moderate safety investment
-        'Cooperation': 3    # Mixed cooperation
+        'Safety': 2,
+        'Cooperation': 2,
+        'Capability': 3,
     },
     'SSP3': {
-        'Capability': 2,    # Fragmented, inefficient development
-        'Safety': 1,        # Minimal safety focus
-        'Cooperation': 1    # High rivalry, low cooperation
+        'Safety': 1,
+        'Cooperation': 1,
+        'Capability': 2,
     },
     'SSP4': {
-        'Capability': 4,    # High capability for elite systems
-        'Safety': 2,        # Unequal safety (high for elite, low for others)
-        'Cooperation': 2    # Limited, stratified cooperation
+        'Safety': 2,
+        'Cooperation': 1,
+        'Capability': 3,
     },
     'SSP5': {
-        'Capability': 5,    # Rapid tech advancement
-        'Safety': 2,        # Tech-optimist, lower relative safety
-        'Cooperation': 3    # Moderate cooperation focused on tech
+        'Safety': 1,
+        'Cooperation': 2,
+        'Capability': 5,
     }
 }
 
 # Risk probabilities by 2040
 RISK_DATA = {
-    # Probabilities or relative concern levels by 2040 (0-100 scale) for each SSP
     'risks': [
-        'Economic\nCollapse',         # Rapid automation leading to severe economic dislocation
-        'Power\nConflict',            # AI-enabled interstate or bloc power escalation
-        'Totalitarian\nLock-in',      # Permanent algorithmic authoritarian control
-        'CBRN\nMisuse',               # Chemical/Biological/Radiological/Nuclear enabled misuse
-        'Existential\nCatastrophe'    # Irreversible loss of long-term future potential
+        'Economic\nCollapse',
+        'Power\nConflict',
+        'Totalitarian\nLock-in',
+        'CBRN\nMisuse',
+        'Existential\nCatastrophe'
     ],
-    # Placeholder values (tunable): lower across cooperative, higher in fragmentation
-    'SSP1': [15, 15, 10, 12, 8],
-    'SSP2': [35, 40, 25, 30, 20],
-    'SSP3': [70, 85, 60, 65, 55],
-    'SSP4': [55, 50, 65, 45, 35],
-    'SSP5': [45, 55, 30, 35, 25]
+    'SSP1': [5, 1, 0.5, 1, 0.5],
+    'SSP2': [15, 5, 3, 5, 3],
+    'SSP3': [15, 10, 7, 10, 10],
+    'SSP4': [20, 10, 7, 5, 5],
+    'SSP5': [50, 20, 5, 20, 20]
 }
 
 
@@ -340,7 +338,7 @@ def create_radar_chart(ssp):
     ))
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100], tickfont=dict(size=10)),
+            radialaxis=dict(visible=True, range=[0, 50], tickfont=dict(size=10)),
             angularaxis=dict(tickfont=dict(size=11))
         ),
         showlegend=False,
