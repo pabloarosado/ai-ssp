@@ -21,27 +21,27 @@ AI_METRICS = {
     'SSP1': {
         'Safety': 4,
         'Cooperation': 4,
-        'Capability': 3,
+        'Speed': 3,
     },
     'SSP2': {
         'Safety': 2,
         'Cooperation': 2,
-        'Capability': 3,
+        'Speed': 3,
     },
     'SSP3': {
         'Safety': 1,
         'Cooperation': 1,
-        'Capability': 2,
+        'Speed': 2,
     },
     'SSP4': {
         'Safety': 2,
         'Cooperation': 1,
-        'Capability': 3,
+        'Speed': 3,
     },
     'SSP5': {
         'Safety': 1,
         'Cooperation': 2,
-        'Capability': 5,
+        'Speed': 5,
     }
 }
 
@@ -240,7 +240,7 @@ def create_ai_metrics_table():
     
     # Define SSPs in order
     ssps = ['SSP1', 'SSP2', 'SSP3', 'SSP4', 'SSP5']
-    metrics = ['Capability', 'Safety', 'Cooperation']
+    metrics = ['Speed', 'Safety', 'Cooperation']
     
     # Create circle rating display (●○○○○ style)
     def create_rating_circles(rating):
@@ -250,7 +250,7 @@ def create_ai_metrics_table():
     
     # Build table data
     ssp_names = [SCENARIOS[ssp]['name'] for ssp in ssps]
-    capability_ratings = [create_rating_circles(AI_METRICS[ssp]['Capability']) for ssp in ssps]
+    speed_ratings = [create_rating_circles(AI_METRICS[ssp]['Speed']) for ssp in ssps]
     safety_ratings = [create_rating_circles(AI_METRICS[ssp]['Safety']) for ssp in ssps]
     cooperation_ratings = [create_rating_circles(AI_METRICS[ssp]['Cooperation']) for ssp in ssps]
     
@@ -269,14 +269,14 @@ def create_ai_metrics_table():
     
     fig = go.Figure(data=[go.Table(
         header=dict(
-            values=['<b>Scenario</b>', '<b>Capability</b>', '<b>Safety</b>', '<b>Cooperation</b>'],
+            values=['<b>Scenario</b>', '<b>Speed</b>', '<b>Safety</b>', '<b>Cooperation</b>'],
             fill_color=header_color,
             align='left',
             font=dict(color='white', size=14, family='Arial'),
             height=40
         ),
         cells=dict(
-            values=[ssp_names, capability_ratings, safety_ratings, cooperation_ratings],
+            values=[ssp_names, speed_ratings, safety_ratings, cooperation_ratings],
             fill_color=fill_colors,
             align='left',
             font=dict(size=16, family='Arial'),
