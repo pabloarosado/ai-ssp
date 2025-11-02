@@ -83,7 +83,7 @@ def fetch_ipcc_table():
 
 @st.cache_data(show_spinner=False)
 def load_owid_data() -> Optional[pd.DataFrame]:
-    """Load & clean baseline SSP data (2020, 2030, 2040) from cached raw table."""
+    """Load & clean baseline SSP data (2020, 2030, 2040) from cached raw table with regional support."""
     try:
         tb_raw = fetch_ipcc_table()
         tb = tb_raw.reset_index().rename(columns={"country": "scenario"}).drop_duplicates()
@@ -93,24 +93,38 @@ def load_owid_data() -> Optional[pd.DataFrame]:
         ]
         tb_filtered = tb[tb['scenario'].isin(baseline_scenarios) & tb['year'].isin([2020, 2030, 2040])].copy()
         tb_filtered['ssp'] = tb_filtered['scenario'].str.extract(r'(SSP\d)')[0]
-        columns_to_keep = {
-            'gdp_per_capita__region_global': 'gdp_per_capita',
-            'population__region_global': 'population_people',
-            'emissions_co2__region_global': 'co2_emissions_tonnes',
-            'final_energy__region_global': 'final_energy',
-            'elec_capacity__region_global': 'electricity_capacity'
-        }
+        
+        # Define columns for all regions
+        regions = ['global', 'asia', 'latin_america', 'middle_east_and_africa', 'oecd']
+        columns_to_keep = {}
+        for region in regions:
+            columns_to_keep.update({
+                f'gdp_per_capita__region_{region}': f'gdp_per_capita_{region}',
+                f'population__region_{region}': f'population_people_{region}',
+                f'emissions_co2__region_{region}': f'co2_emissions_tonnes_{region}',
+                f'final_energy__region_{region}': f'final_energy_{region}',
+                f'elec_capacity__region_{region}': f'electricity_capacity_{region}'
+            })
+        
         base_cols = ['ssp','year']
         available_cols = [c for c in columns_to_keep if c in tb_filtered.columns]
         tb_clean = tb_filtered[base_cols + available_cols].copy()
         rename_map = {k: v for k, v in columns_to_keep.items() if k in available_cols}
         tb_clean = tb_clean.rename(columns=rename_map)
-        if 'population_people' in tb_clean.columns:
-            tb_clean['population_million'] = tb_clean['population_people'] / 1e6
-            tb_clean = tb_clean.drop(columns=['population_people'])
-        if 'co2_emissions_tonnes' in tb_clean.columns:
-            tb_clean['co2_emissions_gt'] = tb_clean['co2_emissions_tonnes'] / 1e9
-            tb_clean = tb_clean.drop(columns=['co2_emissions_tonnes'])
+        
+        # Convert population and emissions for all regions
+        for region in regions:
+            pop_col = f'population_people_{region}'
+            co2_col = f'co2_emissions_tonnes_{region}'
+            
+            if pop_col in tb_clean.columns:
+                tb_clean[f'population_million_{region}'] = tb_clean[pop_col] / 1e6
+                tb_clean = tb_clean.drop(columns=[pop_col])
+            
+            if co2_col in tb_clean.columns:
+                tb_clean[f'co2_emissions_gt_{region}'] = tb_clean[co2_col] / 1e9
+                tb_clean = tb_clean.drop(columns=[co2_col])
+        
         return tb_clean
     except Exception as e:
         st.warning(f"Could not load OWID data: {e}")
@@ -118,15 +132,28 @@ def load_owid_data() -> Optional[pd.DataFrame]:
 
 
 @st.cache_data(show_spinner=False)
-def get_combined_data(_owid_data: Optional[pd.DataFrame] = None):
-    """Strictly merge cleaned OWID baseline data with AI projections; no synthetic fallbacks."""
+def get_combined_data(_owid_data: Optional[pd.DataFrame] = None, region: str = 'global'):
+    """Strictly merge cleaned OWID baseline data with AI projections; no synthetic fallbacks.
+    
+    Args:
+        _owid_data: DataFrame with regional OWID data
+        region: Region to extract data for (global, asia, latin_america, middle_east_and_africa, oecd)
+    """
     if _owid_data is None:
         raise ValueError("OWID IPCC data not loaded; cannot build baseline metrics.")
 
-    required_cols = ['ssp','year','gdp_per_capita','population_million','co2_emissions_gt','final_energy','electricity_capacity']
-    missing_global = [c for c in required_cols if c not in _owid_data.columns]
-    if missing_global:
-        raise KeyError(f"Missing required columns in OWID dataset: {missing_global}")
+    # Build column names for the selected region
+    region_suffix = f'_{region}' if region != 'global' else '_global'
+    required_cols = ['ssp', 'year',
+                     f'gdp_per_capita{region_suffix}',
+                     f'population_million{region_suffix}',
+                     f'co2_emissions_gt{region_suffix}',
+                     f'final_energy{region_suffix}',
+                     f'electricity_capacity{region_suffix}']
+    
+    missing_regional = [c for c in required_cols if c not in _owid_data.columns]
+    if missing_regional:
+        raise KeyError(f"Missing required columns for region '{region}' in OWID dataset: {missing_regional}")
 
     years_sorted = sorted(list(set(_owid_data['year'])))
     combined = {
@@ -146,11 +173,11 @@ def get_combined_data(_owid_data: Optional[pd.DataFrame] = None):
         # Expand scalar safety value across available years for consistency in charting interfaces if needed
         safety_scalar = AI_PROJECTIONS['safety_research_pct'][ssp]
         combined['safety_research_pct'][ssp] = [safety_scalar] * len(years_sorted)
-        combined['gdp_per_capita'][ssp] = ssp_rows['gdp_per_capita'].tolist()
-        combined['population'][ssp] = ssp_rows['population_million'].tolist()
-        combined['co2_emissions'][ssp] = ssp_rows['co2_emissions_gt'].tolist()
-        combined['final_energy'][ssp] = ssp_rows['final_energy'].tolist()
-        combined['electricity_capacity'][ssp] = ssp_rows['electricity_capacity'].tolist()
+        combined['gdp_per_capita'][ssp] = ssp_rows[f'gdp_per_capita{region_suffix}'].tolist()
+        combined['population'][ssp] = ssp_rows[f'population_million{region_suffix}'].tolist()
+        combined['co2_emissions'][ssp] = ssp_rows[f'co2_emissions_gt{region_suffix}'].tolist()
+        combined['final_energy'][ssp] = ssp_rows[f'final_energy{region_suffix}'].tolist()
+        combined['electricity_capacity'][ssp] = ssp_rows[f'electricity_capacity{region_suffix}'].tolist()
 
     return combined
 
@@ -283,7 +310,6 @@ def create_radar_chart(ssp):
 
 # Load data
 owid_data = load_owid_data()
-AI_DATA = get_combined_data(owid_data)  # Use combined OWID + AI projections
 
 # Main unified view
 st.header("AI Development Across Shared Socioeconomic Pathways")
@@ -291,26 +317,58 @@ st.header("AI Development Across Shared Socioeconomic Pathways")
 st.markdown("---")
 
 # Section 1: OWID Metrics (GDP per capita, Population, CO2)
-st.subheader("IPCC Baseline Metric (2020-2040)")
+st.subheader("IPCC Baseline Metrics (2020-2040)")
 
+# Add region selector
+REGION_MAPPING = {
+    'Global': 'global',
+    'Asia': 'asia',
+    'Latin America': 'latin_america',
+    'Middle East and Africa': 'middle_east_and_africa',
+    'OECD': 'oecd'
+}
+
+# Load data for selected region (placeholder, will be updated after selection)
+# Create elegant layout with metric selector on left and region selector on right
+col_metric, col_region = st.columns([3, 1])
+
+# Need to get available metrics first
+AI_DATA_temp = get_combined_data(owid_data, region='global')
 available_metrics = {}
-if AI_DATA['gdp_per_capita']:
-    available_metrics['GDP per Capita ($/person)'] = ('gdp_per_capita', AI_DATA['gdp_per_capita'])
-if AI_DATA['population']:
-    available_metrics['Population (Millions)'] = ('population', AI_DATA['population'])
-if AI_DATA['co2_emissions']:
-    available_metrics['CO₂ Emissions (Gt/year)'] = ('co2_emissions', AI_DATA['co2_emissions'])
-if AI_DATA['final_energy']:
-    available_metrics['Final Energy (TWh/year)'] = ('final_energy', AI_DATA['final_energy'])
-if AI_DATA['electricity_capacity']:
-    available_metrics['Electricity Capacity (GW)'] = ('electricity_capacity', AI_DATA['electricity_capacity'])
+if AI_DATA_temp['gdp_per_capita']:
+    available_metrics['GDP per Capita ($/person)'] = 'gdp_per_capita'
+if AI_DATA_temp['population']:
+    available_metrics['Population (Millions)'] = 'population'
+if AI_DATA_temp['co2_emissions']:
+    available_metrics['CO₂ Emissions (Gt/year)'] = 'co2_emissions'
+if AI_DATA_temp['final_energy']:
+    available_metrics['Final Energy (TWh/year)'] = 'final_energy'
+if AI_DATA_temp['electricity_capacity']:
+    available_metrics['Electricity Capacity (GW)'] = 'electricity_capacity'
 
 if not available_metrics:
     st.info("No baseline metrics available from source data.")
 else:
-    selected_label = st.radio("Select metric", list(available_metrics.keys()), horizontal=True)
-    metric_key, metric_data = available_metrics[selected_label]
-    fig_metric = create_comparison_chart(metric_key, metric_data, selected_label, f"{selected_label} Trajectories")
+    with col_metric:
+        selected_label = st.radio("Metric", list(available_metrics.keys()), horizontal=True, label_visibility="visible")
+    
+    with col_region:
+        selected_region_label = st.selectbox(
+            "Region",
+            list(REGION_MAPPING.keys()),
+            index=0,  # Default to Global
+            label_visibility="visible"
+        )
+    
+    selected_region = REGION_MAPPING[selected_region_label]
+    
+    # Load data for selected region
+    AI_DATA = get_combined_data(owid_data, region=selected_region)
+    metric_key = available_metrics[selected_label]
+    metric_data = AI_DATA[metric_key]
+    
+    chart_title = f"{selected_label} Trajectories — {selected_region_label}"
+    fig_metric = create_comparison_chart(metric_key, metric_data, selected_label, chart_title)
     st.plotly_chart(fig_metric, use_container_width=True)
 
 st.markdown("---")
