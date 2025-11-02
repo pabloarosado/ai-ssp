@@ -16,20 +16,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# AI-specific projections (expert judgment based on SSP narratives and AI forecasting literature)
-# These represent our best estimates for AI development trajectories under each SSP
-AI_PROJECTIONS = {
-    'years': [2020, 2030, 2040],  # Kept for alignment with baseline socioeconomic data
-    # Single scalar: Safety research investment share in 2040 (or representative level across decade window)
-    'safety_research_pct': {
-        'SSP1': 30,   # High safety prioritization
-        'SSP2': 15,   # Moderate safety investment
-        'SSP3': 5,    # Minimal safety focus
-        'SSP4': 18,   # Elite safety for elite systems
-        'SSP5': 12    # Tech-optimist, lower relative safety share
-    }
-}
-
 # AI Development Metrics (Global) - 5-point scale assessment
 # Scale: 1 (lowest/worst) to 5 (highest/best)
 AI_METRICS = {
@@ -189,7 +175,6 @@ def get_combined_data(_owid_data: Optional[pd.DataFrame] = None, region: str = '
     combined = {
         'years': years_sorted,
         'gdp_per_capita': {},
-        'safety_research_pct': {},
         'population': {},
         'co2_emissions': {},
         'final_energy': {},
@@ -200,9 +185,6 @@ def get_combined_data(_owid_data: Optional[pd.DataFrame] = None, region: str = '
         ssp_rows = _owid_data[_owid_data['ssp'] == ssp].sort_values('year')
         if ssp_rows.empty:
             raise ValueError(f"No rows for {ssp} in OWID data.")
-        # Expand scalar safety value across available years for consistency in charting interfaces if needed
-        safety_scalar = AI_PROJECTIONS['safety_research_pct'][ssp]
-        combined['safety_research_pct'][ssp] = [safety_scalar] * len(years_sorted)
         combined['gdp_per_capita'][ssp] = ssp_rows[f'gdp_per_capita{region_suffix}'].tolist()
         combined['population'][ssp] = ssp_rows[f'population_million{region_suffix}'].tolist()
         combined['co2_emissions'][ssp] = ssp_rows[f'co2_emissions_gt{region_suffix}'].tolist()
@@ -310,34 +292,6 @@ def create_ai_metrics_table():
         margin=dict(l=20, r=20, t=20, b=20)
     )
     
-    return fig
-
-def create_safety_bar_chart():
-    """Create a bar chart showing scalar safety research % for each SSP."""
-    ssp_labels = []
-    values = []
-    colors = []
-    for ssp in ['SSP1','SSP2','SSP3','SSP4','SSP5']:
-        ssp_labels.append(SCENARIOS[ssp]['name'].split(':')[0])
-        safety_value = AI_PROJECTIONS['safety_research_pct'][ssp]
-        values.append(safety_value)
-        colors.append(SCENARIOS[ssp]['color'])
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=ssp_labels,
-        y=values,
-        marker_color=colors,
-        text=[f"{v}%" for v in values],
-        textposition='outside'
-    ))
-    fig.update_layout(
-        title=dict(text='Safety Research Investment Share (Representative Level)', font=dict(size=18, color='#2c3e50')),
-        xaxis_title='Scenario',
-        yaxis_title='Safety Research (%)',
-        template='plotly_white',
-        height=500,
-        yaxis=dict(range=[0, max(values)*1.15])
-    )
     return fig
 
 def create_risk_heatmap():
