@@ -30,6 +30,36 @@ AI_PROJECTIONS = {
     }
 }
 
+# AI Development Metrics (Global) - 5-point scale assessment
+# Scale: 1 (lowest/worst) to 5 (highest/best)
+AI_METRICS = {
+    'SSP1': {
+        'Capability': 4,    # Strong capability through cooperation
+        'Safety': 5,        # Highest safety prioritization
+        'Cooperation': 5    # Maximum international cooperation
+    },
+    'SSP2': {
+        'Capability': 3,    # Moderate, uneven progress
+        'Safety': 3,        # Moderate safety investment
+        'Cooperation': 3    # Mixed cooperation
+    },
+    'SSP3': {
+        'Capability': 2,    # Fragmented, inefficient development
+        'Safety': 1,        # Minimal safety focus
+        'Cooperation': 1    # High rivalry, low cooperation
+    },
+    'SSP4': {
+        'Capability': 4,    # High capability for elite systems
+        'Safety': 2,        # Unequal safety (high for elite, low for others)
+        'Cooperation': 2    # Limited, stratified cooperation
+    },
+    'SSP5': {
+        'Capability': 5,    # Rapid tech advancement
+        'Safety': 2,        # Tech-optimist, lower relative safety
+        'Cooperation': 3    # Moderate cooperation focused on tech
+    }
+}
+
 # Risk probabilities by 2040
 RISK_DATA = {
     # Probabilities or relative concern levels by 2040 (0-100 scale) for each SSP
@@ -225,6 +255,63 @@ def create_comparison_chart(metric_name, data_dict, ylabel, title, format_str=No
     
     return fig
 
+def create_ai_metrics_table():
+    """Create a rating table for AI development metrics across SSPs."""
+    import plotly.graph_objects as go
+    
+    # Define SSPs in order
+    ssps = ['SSP1', 'SSP2', 'SSP3', 'SSP4', 'SSP5']
+    metrics = ['Capability', 'Safety', 'Cooperation']
+    
+    # Create circle rating display (●○○○○ style)
+    def create_rating_circles(rating):
+        filled = '●' * rating
+        empty = '○' * (5 - rating)
+        return filled + empty
+    
+    # Build table data
+    ssp_names = [SCENARIOS[ssp]['name'] for ssp in ssps]
+    capability_ratings = [create_rating_circles(AI_METRICS[ssp]['Capability']) for ssp in ssps]
+    safety_ratings = [create_rating_circles(AI_METRICS[ssp]['Safety']) for ssp in ssps]
+    cooperation_ratings = [create_rating_circles(AI_METRICS[ssp]['Cooperation']) for ssp in ssps]
+    
+    # Create color coding for rows
+    row_colors = [SCENARIOS[ssp]['color'] for ssp in ssps]
+    # Lighten colors for better readability
+    header_color = '#34495e'
+    cell_colors = [[f'rgba({int(c[1:3], 16)}, {int(c[3:5], 16)}, {int(c[5:7], 16)}, 0.15)'] * 3 for c in row_colors]
+    
+    # Create fill colors for all columns (scenario name column + 3 metric columns)
+    # Each row gets the same lightened color across all columns
+    fill_colors = []
+    for i in range(4):  # 4 columns total
+        column_colors = [cell_colors[j][0] for j in range(len(ssps))]
+        fill_colors.append(column_colors)
+    
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['<b>Scenario</b>', '<b>Capability</b>', '<b>Safety</b>', '<b>Cooperation</b>'],
+            fill_color=header_color,
+            align='left',
+            font=dict(color='white', size=14, family='Arial'),
+            height=40
+        ),
+        cells=dict(
+            values=[ssp_names, capability_ratings, safety_ratings, cooperation_ratings],
+            fill_color=fill_colors,
+            align='left',
+            font=dict(size=16, family='Arial'),
+            height=45
+        )
+    )])
+    
+    fig.update_layout(
+        height=400,
+        margin=dict(l=20, r=20, t=20, b=20)
+    )
+    
+    return fig
+
 def create_safety_bar_chart():
     """Create a bar chart showing scalar safety research % for each SSP."""
     ssp_labels = []
@@ -374,13 +461,11 @@ else:
 st.markdown("---")
 
 # Section 2: AI-Specific Metrics
-st.subheader("AI Development Metrics (2020-2040)")
+st.subheader("AI Development Metrics")
 
-# Safety research - single chart, centered
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    fig_safety = create_safety_bar_chart()
-    st.plotly_chart(fig_safety, use_container_width=True)
+# Display AI metrics table
+fig_ai_table = create_ai_metrics_table()
+st.plotly_chart(fig_ai_table, use_container_width=True)
 
 st.markdown("---")
 
