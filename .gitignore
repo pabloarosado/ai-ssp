@@ -1,0 +1,52 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+.env
+.env.*
+
+# Package build / distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+
+# Streamlit cache & logs
+.streamlit/
+logs/
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+
+# Data artifacts (add specific patterns if generated locally)
+*.parquet
+*.csv
+*.tsv
+
+# Secrets (ensure you actually keep real secrets out of repo)
+*.key
+*.pem
+.env.local
+
+# Node (if added later)
+node_modules/
+
+# pytest / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Reports / temporary
+*.tmp
+*.log
