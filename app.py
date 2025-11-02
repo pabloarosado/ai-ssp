@@ -1,6 +1,5 @@
 """
-AI-SSP Dashboard: Interactive Visualization of AI Development Scenarios
-Based on IPCC Shared Socioeconomic Pathways
+AI-SSP dashboard: interactive visualization tool of AI safety and governance scenarios based on IPCC Shared Socioeconomic Pathways.
 """
 
 import streamlit as st
@@ -314,12 +313,13 @@ def create_risk_heatmap():
     ))
     
     fig.update_layout(
-        title="Risk Assessment by Scenario (Probability by 2040)",
-        xaxis_title="Risk Category",
+        title="Risk assessment by scenario (probability by 2040)",
+        # xaxis_title="Risk category",
         yaxis_title="Scenario",
         height=400,
         template='plotly_white',
-        yaxis=dict(autorange='reversed')  # Ensure first list element (SSP1) is rendered at top
+        yaxis=dict(autorange='reversed'),  # Ensure first list element (SSP1) is rendered at top
+        xaxis=dict(side='top')  # Move x-axis labels to top
     )
     
     return fig
@@ -353,12 +353,12 @@ def create_radar_chart(ssp):
 owid_data = load_owid_data()
 
 # Main unified view
-st.header("AI Development Across Shared Socioeconomic Pathways")
+st.header("AI Safety and Governance Across Shared Socioeconomic Pathways")
 
 st.markdown("---")
 
 # Section 1: OWID Metrics (GDP per capita, Population, CO2)
-st.subheader("IPCC Baseline Metrics (2020-2040)")
+st.subheader("IPCC baseline metrics (2020-2040)")
 
 # Add region selector
 REGION_MAPPING = {
@@ -415,7 +415,7 @@ else:
 st.markdown("---")
 
 # Section 2: AI-Specific Metrics
-st.subheader("AI Development Metrics")
+st.subheader("AI development metrics")
 
 # Display AI metrics table
 fig_ai_table = create_ai_metrics_table()
@@ -424,7 +424,7 @@ st.plotly_chart(fig_ai_table, use_container_width=True)
 st.markdown("---")
 
 # Section 3: Risk Assessment
-st.subheader("Risk Profiles by 2040")
+st.subheader("Risk profiles by 2040")
 
 # Risk radar charts - tabs for each SSP
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -451,6 +451,6 @@ st.plotly_chart(fig_risk, use_container_width=True)
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #666; padding: 1rem;'>
-    <p><strong>AI-SSP Dashboard</strong> | Illustrative proof-of-concept</p>
+    <p><strong>AI-SSP Dashboard</strong></p>
 </div>
 """, unsafe_allow_html=True)
